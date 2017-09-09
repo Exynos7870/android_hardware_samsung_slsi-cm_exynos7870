@@ -16,27 +16,27 @@
 
 ifeq ($(TARGET_BOARD_PLATFORM), exynos5)
 ifeq ($(TARGET_SLSI_VARIANT), cm)
-ifeq ($(TARGET_SOC), exynos7420)
-exynos7420_dirs := \
+ifeq ($(TARGET_SOC), exynos7870)
+exynos7870_dirs := \
 	mobicore \
 	gralloc \
 	libdisplaymodule \
 	libhwcutilsmodule \
 	libhdmimodule \
 	libhwjpeg \
-	libsecurepath 
+	libsecurepath
 
 ifeq ($(BOARD_USES_VIRTUAL_DISPLAY), true)
-exynos7420_dirs += \
+exynos7870_dirs += \
 	libvirtualdisplaymodule
 endif
 
 ifeq ($(BOARD_USES_TRUST_KEYMASTER), true)
-exynos7420_dirs += \
+exynos7870_dirs += \
 	libkeymaster
 endif
 
-include $(call all-named-subdir-makefiles,$(exynos7420_dirs))
+include $(call all-named-subdir-makefiles,$(exynos7870_dirs))
 
 endif
 endif
