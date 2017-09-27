@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Samsung Electronics Co., Ltd.
+ * Copyright (c) 2015 Samsung Electronics Co., Ltd.
  *		http://www.samsung.com
  *
  * Header file for Exynos DECON driver
@@ -18,14 +18,13 @@
 #include <linux/interrupt.h>
 #include <linux/wait.h>
 #include <linux/kthread.h>
-#include <linux/videodev2_exynos_media.h>
 #include <linux/pm_qos.h>
 #include <linux/delay.h>
+#include <linux/seq_file.h>
 #include <media/v4l2-device.h>
 #include <media/videobuf2-core.h>
 #include <media/exynos_mc.h>
-#include <mach/devfreq.h>
-#include <mach/bts.h>
+#include <soc/samsung/bts.h>
 
 #include "regs-decon.h"
 #include "decon_common.h"
@@ -35,6 +34,9 @@ extern struct ion_device *ion_exynos;
 extern struct decon_device *decon_int_drvdata;
 extern int decon_log_level;
 
+#if defined(CONFIG_ARM_EXYNOS7870_BUS_DEVFREQ)
+#define CONFIG_DECON_DEVFREQ
+#endif
 /*
  * Lets Keep it same as 7420. This is the count for
  * maximum number of layers supported by this driver.
@@ -43,11 +45,12 @@ extern int decon_log_level;
  */
 #define MAX_DECON_WIN		(7)
 
+#define DECON_INT		(0)
+
 #define DRIVER_NAME		"decon"
 #define MAX_NAME_SIZE		32
 
 #define MAX_DECON_PADS		9
-#define DECON_PAD_WB		6
 
 #define MAX_BUF_PLANE_CNT	3
 #define DECON_ENTER_LPD_CNT	3
@@ -57,34 +60,36 @@ extern int decon_log_level;
 #define DECON_ENABLE		1
 #define DECON_DISABLE		0
 #define DECON_BACKGROUND	0
-#define VSYNC_TIMEOUT_MSEC	50
+#define VSYNC_TIMEOUT_MSEC	200
 #define MAX_BW_PER_WINDOW	(2560 * 1600 * 4 * 60)
 #define LCD_DEFAULT_BPP		24
 
-#define DECON_TZPC_OFFSET	3
-#define DECON_ODMA_WB		8
-#define MAX_DMA_TYPE		9
+#define SHADOW_OFFSET		(0x7000)
 
-#ifdef CONFIG_DECON_PM_QOS_REQUESTS
-#define MIF_DVFS_LVL_MIN	(111000)
-#define MIF_DVFS_LVL_MAX	(825000)
-#define INT_DVFS_LVL_MIN	(100000)
-#define INT_DVFS_LVL_MAX	(400000)
-#define INT_SCALING_FACTOR	(20)
-#define MIF_SCALING_FACTOR	(20)
-#endif
+#define DRM_DEV_DECON		3
+#define DECON_CFW_OFFSET	3
+
+#define MAX_FRM_DONE_WAIT	34
+
+#define EVT_TYPE_INT			BIT(31)
+#define EVT_TYPE_IOCTL			BIT(30)
+#define EVT_TYPE_ASYNC_EVT		BIT(29)
+#define EVT_TYPE_PM			BIT(28)
+#define EVT_TYPE_WININFO		BIT(27)
 
 #define DECON_LOG_LEVEL_ERR		3
 #define DECON_LOG_LEVEL_WARN		4
 #define DECON_LOG_LEVEL_INFO		6
 #define DECON_LOG_LEVEL_DBG		7
 
+#define DECON_UNDERRUN_THRESHOLD	300
+
 #ifdef CONFIG_FB_WINDOW_UPDATE
 #define DECON_WIN_UPDATE_IDX	(7)
 #define decon_win_update_dbg(fmt, ...)					\
 	do {								\
 		if (decon_log_level >= DECON_LOG_LEVEL_DBG)				\
-			pr_info(pr_fmt(fmt), ##__VA_ARGS__);		\
+			pr_info(pr_fmt("decon:" fmt), ##__VA_ARGS__);		\
 	} while (0)
 #else
 #define decon_win_update_dbg(fmt, ...) (while (0))
@@ -93,25 +98,25 @@ extern int decon_log_level;
 #define decon_err(fmt, ...)							\
 	do {									\
 		if (decon_log_level >= DECON_LOG_LEVEL_ERR)					\
-			pr_err(pr_fmt(fmt), ##__VA_ARGS__);			\
+			pr_err(pr_fmt("decon:" fmt), ##__VA_ARGS__);			\
 	} while (0)
 
 #define decon_warn(fmt, ...)							\
 	do {									\
 		if (decon_log_level >= DECON_LOG_LEVEL_WARN)					\
-			pr_warn(pr_fmt(fmt), ##__VA_ARGS__);			\
+			pr_warn(pr_fmt("decon:" fmt), ##__VA_ARGS__);			\
 	} while (0)
 
 #define decon_info(fmt, ...)							\
 	do {									\
 		if (decon_log_level >= DECON_LOG_LEVEL_INFO)					\
-			pr_info(pr_fmt(fmt), ##__VA_ARGS__);			\
+			pr_info(pr_fmt("decon:" fmt), ##__VA_ARGS__);			\
 	} while (0)
 
 #define decon_dbg(fmt, ...)							\
 	do {									\
 		if (decon_log_level >= DECON_LOG_LEVEL_DBG)					\
-			pr_info(pr_fmt(fmt), ##__VA_ARGS__);			\
+			pr_info(pr_fmt("decon:" fmt), ##__VA_ARGS__);			\
 	} while (0)
 
 /*
@@ -142,6 +147,9 @@ struct exynos_decon_platdata {
 	int	max_win;
 	int	default_win;
 	u32	disp_pll_clk;
+	u32	disp_eclk;
+	u32	disp_vclk;
+	u32	disp_dvfs;
 };
 
 struct decon_vsync {
@@ -199,17 +207,12 @@ struct decon_win_rect {
 };
 
 struct decon_resources {
-	struct clk *pclk;
-	struct clk *aclk;
-	struct clk *eclk;
-	struct clk *vclk;
-	struct clk *dsd;
-	struct clk *lh_disp0;
-	struct clk *lh_disp1;
-	struct clk *aclk_disp;
-	struct clk *pclk_disp;
-	struct clk *mif_pll;
-	struct clk *aclk_disp_200;
+	struct clk *dpll;		/* Display PLL */
+	struct clk *core_clk;		/* Core CLock, APB, BUS */
+	struct clk *eclk;		/* ECLK from MIF */
+	struct clk *eclk_leaf;		/* ECLK Local (DISP PLL or MIF) */
+	struct clk *vclk;		/* VCLK from MIF */
+	struct clk *vclk_leaf;		/* VCLK Local (DISP PLL or MIF) */
 };
 
 struct decon_rect {
@@ -291,6 +294,8 @@ enum decon_pixel_format {
 	DECON_PIXEL_FORMAT_YUV420M,
 	DECON_PIXEL_FORMAT_YVU420M,
 
+	DECON_PIXEL_FORMAT_NV21M_FULL,
+
 	DECON_PIXEL_FORMAT_MAX,
 };
 
@@ -341,6 +346,20 @@ struct vpp_params {
 	enum vpp_csc_eq eq_mode;
 };
 
+
+struct decon_phys_addr {
+	unsigned long phy_addr[MAX_BUF_PLANE_CNT];
+	unsigned int phy_addr_len[MAX_BUF_PLANE_CNT];
+};
+
+struct decon_phys_old_info {
+	int win_id;
+	int pixel_format;
+	int plane;
+	unsigned long int phys_addr[MAX_BUF_PLANE_CNT];
+	unsigned int phys_addr_len[MAX_BUF_PLANE_CNT];
+};
+
 struct decon_frame {
 	int x;
 	int y;
@@ -370,6 +389,8 @@ struct decon_win_config {
 			struct vpp_params		vpp_parm;
 			/* no read area of IDMA */
 			struct decon_win_rect		block_area;
+			struct decon_win_rect		transparent_area;
+			struct decon_win_rect		opaque_area;
 			/* source framebuffer coordinates */
 			struct decon_frame		src;
 		};
@@ -395,7 +416,7 @@ struct decon_reg_data {
 	u32				blendeq[MAX_DECON_WIN - 1];
 	u32				buf_start[MAX_DECON_WIN];
 	struct decon_dma_buf_data	dma_buf_data[MAX_DECON_WIN][MAX_BUF_PLANE_CNT];
-	unsigned int			bandwidth;
+	unsigned int	num_of_window;
 	u32				win_overlap_cnt;
 	u32                             offset_x[MAX_DECON_WIN];
 	u32                             offset_y[MAX_DECON_WIN];
@@ -403,10 +424,13 @@ struct decon_reg_data {
 	u32                             whole_h[MAX_DECON_WIN];
 	struct decon_win_config		win_config[MAX_DECON_WIN];
 	struct decon_win_rect		block_rect[MAX_DECON_WIN];
+	struct decon_phys_addr		phys_addr[MAX_DECON_WIN + 1];
 #ifdef CONFIG_FB_WINDOW_UPDATE
 	struct decon_win_rect		update_win;
 	bool            		need_update;
 #endif
+	u64				cur_bw;
+	u64				bandwidth;
 	bool				protection[MAX_DECON_WIN];
 };
 
@@ -426,15 +450,202 @@ union decon_ioctl_data {
 };
 
 struct decon_underrun_stat {
-	int	prev_overlap_cnt;
-	int	cur_overlap_cnt;
+	u64	prev_bw;
 	int	chmap;
 	int	fifo_level;
+	int	underrun_cnt;
 	unsigned long aclk;
 	unsigned long lh_disp0;
 	unsigned long mif_pll;
 	unsigned long used_windows;
 };
+
+#ifdef CONFIG_DECON_EVENT_LOG
+
+#define DEFAULT_BASE_IDX	(-1)
+
+/**
+ * Display Subsystem event management status.
+ *
+ * These status labels are used internally by the DECON to indicate the
+ * current status of a device with operations.
+ */
+
+typedef enum disp_ss_event_type {
+	/* Related with FB interface */
+	DISP_EVT_BLANK = EVT_TYPE_IOCTL,
+	DISP_EVT_UNBLANK,
+	DISP_EVT_ACT_VSYNC,
+	DISP_EVT_DEACT_VSYNC,
+	DISP_EVT_WIN_CONFIG,
+	DISP_EVT_ACT_PROT,
+	DISP_EVT_DEACT_PROT,
+
+	/* Related with interrupt */
+	DISP_EVT_TE_INTERRUPT = EVT_TYPE_INT,
+	DISP_EVT_UNDERRUN,
+	DISP_EVT_DECON_FRAMEDONE,
+	DISP_EVT_DSIM_FRAMEDONE,
+	DISP_EVT_UPDATE_TIMEOUT,
+
+	/* Related with async event */
+	DISP_EVT_UPDATE_HANDLER = EVT_TYPE_ASYNC_EVT,
+	DISP_EVT_DSIM_COMMAND,
+	DISP_EVT_TRIG_MASK,
+	DISP_EVT_TRIG_UNMASK,
+	DISP_EVT_DECON_FRAMEDONE_WAIT,
+	DISP_EVT_LINECNT_ZERO,
+	DISP_EVT_SIZE_ERR,
+	DISP_EVT_DSIM_INTR_ENABLE,
+	DISP_EVT_DSIM_INTR_DISABLE,
+	DISP_EVT_DECON_SHUTDOWN,
+	DISP_EVT_DSIM_SHUTDOWN,
+
+	DISP_EVT_WIN_CONFIG_PARAM = EVT_TYPE_WININFO,
+	DISP_EVT_UPDATE_PARAMS,
+
+	/* Related with PM */
+	DISP_EVT_DECON_SUSPEND = EVT_TYPE_PM,
+	DISP_EVT_DECON_RESUME,
+	DISP_EVT_ENTER_LPD,
+	DISP_EVT_EXIT_LPD,
+	DISP_EVT_DSIM_SUSPEND,
+	DISP_EVT_DSIM_RESUME,
+	DISP_EVT_ENTER_ULPS,
+	DISP_EVT_EXIT_ULPS,
+
+	DISP_EVT_VSYNC_TIMEOUT,
+	DISP_EVT_VSTATUS_TIMEOUT,
+
+	DISP_EVT_MAX, /* End of EVENT */
+} disp_ss_event_t;
+
+/* Related with PM */
+struct disp_log_pm {
+	u32 pm_status;		/* ACTIVE(1) or SUSPENDED(0) */
+	ktime_t elapsed;	/* End time - Start time */
+};
+
+/* Related with S3CFB_WIN_CONFIG */
+struct decon_update_reg_data {
+	bool need_update;
+	u32 overlap_cnt;
+	u32 bandwidth;
+	u32 wincon[MAX_DECON_WIN];
+	u32 offset_x[MAX_DECON_WIN];
+	u32 offset_y[MAX_DECON_WIN];
+	u32 whole_w[MAX_DECON_WIN];
+	u32 whole_h[MAX_DECON_WIN];
+	u32 vidosd_a[MAX_DECON_WIN];
+	u32 vidosd_b[MAX_DECON_WIN];
+	struct decon_win_config win_config[MAX_DECON_WIN];
+	struct decon_win_rect win;
+};
+
+/* Related with MIPI COMMAND read/write */
+struct dsim_log_cmd_buf {
+	u32 id;
+	u8 buf;
+};
+
+/* Related with size mismatch error */
+struct disp_ss_size_info {
+	u32 w_in;
+	u32 h_in;
+	u32 w_out;
+	u32 h_out;
+};
+
+/**
+ * struct disp_ss_log - Display Subsystem Log
+ * This struct includes DECON/DSIM
+ */
+struct disp_ss_log {
+	ktime_t time;
+	disp_ss_event_t type;
+	union {
+		struct disp_log_pm pm;
+		struct decon_update_reg_data reg;
+		struct dsim_log_cmd_buf cmd_buf;
+		struct decon_win_config_data win_data;
+		struct disp_ss_size_info size_mismatch;
+	} data;
+};
+
+/* bootloader framebuffer information */
+struct disp_bootloader_fb_info {
+	u32 phy_addr;
+	u32 size;
+	u32 l;
+	u32 t;
+	u32 r;
+	u32 b;
+	u32 format;
+};
+
+struct abd_protect {
+	u32 pcd_irq;
+	u32 err_irq;
+	u32 det_irq;
+	u32 pcd_gpio;
+	u32 err_gpio;
+	u32 det_gpio;
+	int pcd_pin_active;
+	int err_pin_active;
+	int det_pin_active;
+	u32 err_count;
+	u32 det_count;
+	struct workqueue_struct *wq;
+	struct work_struct work;
+	u32	queuework_pending;
+	spinlock_t lock;
+	struct notifier_block reboot_notifier;
+};
+
+/* Definitions below are used in the DECON */
+#define	DISP_EVENT_LOG_MAX	SZ_2K
+#define	DISP_EVENT_PRINT_MAX	256
+
+/* APIs below are used in the DECON/DSIM driver */
+#define DISP_SS_EVENT_START() ktime_t start = ktime_get()
+void DISP_SS_EVENT_LOG(disp_ss_event_t type, struct v4l2_subdev *sd, ktime_t time);
+void DISP_SS_EVENT_LOG_WINCON(struct v4l2_subdev *sd, struct decon_reg_data *regs);
+void DISP_SS_EVENT_LOG_UPDATE_PARAMS(struct v4l2_subdev *sd, struct decon_reg_data *regs);
+void DISP_SS_EVENT_LOG_CMD(struct v4l2_subdev *sd, u32 cmd_id, unsigned long data);
+void DISP_SS_EVENT_SHOW(struct seq_file *s, struct decon_device *decon, int base_idx, bool sync);
+void DISP_SS_EVENT_LOG_WIN_CONFIG(struct v4l2_subdev *sd, struct decon_win_config_data *win_data);
+void DISP_SS_EVENT_SIZE_ERR_LOG(struct v4l2_subdev *sd, struct disp_ss_size_info *info);
+#else /*!*/
+#define DISP_SS_EVENT_START(...) do { } while(0)
+#define DISP_SS_EVENT_LOG(...) do { } while(0)
+#define DISP_SS_EVENT_LOG_WINCON(...) do { } while(0)
+#define DISP_SS_EVENT_LOG_CMD(...) do { } while(0)
+#define DISP_SS_EVENT_SHOW(...) do { } while(0)
+#define DISP_SS_EVENT_LOG_UPDATE_PARAMS(...) do { } while(0)
+#define DISP_SS_EVENT_LOG_WIN_CONFIG(...) do { } while(0)
+#define DISP_SS_EVENT_SIZE_ERR_LOG(...) do { } while(0)
+#endif
+
+/**
+* END of CONFIG_DECON_EVENT_LOG
+*/
+
+enum {
+	DISP_DUMP_DECON_UNDERRUN,
+	DISP_DUMP_LINECNT_ZERO,
+	DISP_DUMP_VSYNC_TIMEOUT,
+	DISP_DUMP_VSTATUS_TIMEOUT,
+	DISP_DUMP_COMMAND_WR_TIMEOUT,
+	DISP_DUMP_COMMAND_RD_ERROR,
+	DISP_DUMP_MAX
+};
+
+void decon_dump(struct decon_device *decon);
+#if defined(CONFIG_DECON_EVENT_LOG) && defined(CONFIG_DEBUG_LIST)	/* ENG */
+void DISP_SS_DUMP(u32 type);
+#else
+#define DISP_SS_DUMP(...)
+#endif
 
 struct decon_device {
 	void __iomem			*regs;
@@ -461,8 +672,6 @@ struct decon_device {
 	struct ion_client		*ion_client;
 	struct sw_sync_timeline 	*timeline;
 	int				timeline_max;
-	struct sw_sync_timeline 	*wb_timeline;
-	int				wb_timeline_max;
 
 	struct mutex			output_lock;
 	struct mutex			mutex;
@@ -471,9 +680,6 @@ struct decon_device {
 	enum decon_state        	state;
 	enum decon_output_type		out_type;
 	int				mic_enabled;
-	int				prev_overlap_cnt;
-	int				cur_overlap_cnt;
-	int				id;
 	int				n_sink_pad;
 	int				n_src_pad;
 	union decon_ioctl_data 		ioctl_data;
@@ -484,15 +690,55 @@ struct decon_device {
 #endif
 	struct decon_underrun_stat	underrun_stat;
 	void __iomem			*cam_status[2];
-	u32				prev_protection_bitmask;
+	u32				prev_protection_status;
 	u32				cur_protection_bitmask;
-	struct decon_dma_buf_data	wb_dma_buf_data;
 
 	unsigned int			irq;
-#ifdef CONFIG_DECON_PM_QOS_REQUESTS
-	struct pm_qos_request	mif_qos;
-	struct pm_qos_request	int_qos;
+	int				frame_idle;
+	bool				eint_en_status;
+	struct dentry			*debug_root;
+	int				frame_done_cnt_cur;
+	int				frame_done_cnt_target;
+	int				frame_start_cnt_cur;
+	int				frame_start_cnt_target;
+	wait_queue_head_t		wait_frmdone;
+	wait_queue_head_t		wait_vstatus;
+	ktime_t				trig_mask_timestamp;
+	int					idle_ip_index;
+
+	u64			max_win_bw;
+	u64			prev_bw;
+
+#ifdef CONFIG_DECON_EVENT_LOG
+	wait_queue_head_t		event_wait;
+	struct dentry			*mask;
+	struct dentry			*debug_event;
+	struct disp_ss_log		disp_ss_log[DISP_EVENT_LOG_MAX];
+	atomic_t			disp_ss_log_idx;
 #endif
+	u32				disp_ss_log_unmask;
+#ifdef CONFIG_DECON_USE_BOOTLOADER_FB
+	struct disp_bootloader_fb_info	bl_fb_info;
+#endif
+	struct pinctrl			*pinctrl;
+	struct pinctrl_state 		*decon_te_on;
+	struct pinctrl_state		*decon_te_off;
+	struct decon_phys_old_info	old_info;
+	struct decon_regs_data win_regs;
+
+	bool				ignore_vsync;
+	struct abd_protect		abd;
+	unsigned int			force_fullupdate;
+#ifdef CONFIG_LCD_DOZE_MODE
+	unsigned int			doze_state;
+	unsigned int			pwr_mode;
+#endif
+	unsigned int			disp_dump;
+
+	int systrace_pid;
+	void	(*tracing_mark_write)( int pid, char id, char* str1, int value);
+
+	int 			update_regs_list_cnt;
 };
 
 static inline struct decon_device *get_decon_drvdata(u32 id)
@@ -547,6 +793,10 @@ int decon_lcd_off(struct decon_device *decon);
 int decon_enable(struct decon_device *decon);
 int decon_disable(struct decon_device *decon);
 void decon_lpd_enable(void);
+int decon_wait_for_vsync(struct decon_device *decon, u32 timeout);
+
+/* TUI function API */
+int decon_tui_protection(struct decon_device *decon, bool tui_en);
 
 /* internal only function API */
 int decon_fb_config_eint_for_te(struct platform_device *pdev, struct decon_device *decon);
@@ -574,14 +824,16 @@ void decon_clock_off(struct decon_device *decon);
 u32 decon_reg_get_cam_status(void __iomem *);
 void decon_reg_set_block_mode(u32 id, u32 win_idx, u32 x, u32 y, u32 h, u32 w, u32 enable);
 void decon_reg_set_tui_va(u32 id, u32 va);
-void decon_update_qos_requests(struct decon_device *decon,
-		struct decon_reg_data *regs, bool default_qos);
+void decon_set_qos(struct decon_device *decon, struct decon_reg_data *regs,
+			bool is_after, bool is_default_qos);
 
 /* LPD related */
 static inline void decon_lpd_block(struct decon_device *decon)
 {
-	if (!decon->id)
-		atomic_inc(&decon->lpd_block_cnt);
+	if (!decon)
+		return;
+
+	atomic_inc(&decon->lpd_block_cnt);
 }
 
 static inline bool decon_is_lpd_blocked(struct decon_device *decon)
@@ -596,33 +848,44 @@ static inline int decon_get_lpd_block_cnt(struct decon_device *decon)
 
 static inline void decon_lpd_unblock(struct decon_device *decon)
 {
-	if (!decon->id) {
-		if (decon_is_lpd_blocked(decon))
-			atomic_dec(&decon->lpd_block_cnt);
-	}
+	if (!decon)
+		return;
+
+	if (decon_is_lpd_blocked(decon))
+		atomic_dec(&decon->lpd_block_cnt);
 }
 
 static inline void decon_lpd_block_reset(struct decon_device *decon)
 {
-	if (!decon->id)
-		atomic_set(&decon->lpd_block_cnt, 0);
+	atomic_set(&decon->lpd_block_cnt, 0);
 }
 
 static inline void decon_lpd_trig_reset(struct decon_device *decon)
 {
-	if (!decon->id)
-		atomic_set(&decon->lpd_trig_cnt, 0);
+	atomic_set(&decon->lpd_trig_cnt, 0);
 }
 
+#ifdef CONFIG_DECON_LPD_DISPLAY_WITH_CAMERA
 static inline bool is_cam_not_running(struct decon_device *decon)
 {
-	return !((decon_reg_get_cam_status(decon->cam_status[0]) & 0xF) ||
-		(decon_reg_get_cam_status(decon->cam_status[1]) & 0xF));
+	return !(decon_reg_get_cam_status(decon->cam_status[0]) & 0xF);
 }
+#else
+static inline bool is_cam_not_running(struct decon_device *decon)
+{
+	return true;
+}
+#endif
+
 static inline bool decon_lpd_enter_cond(struct decon_device *decon)
 {
 	return ((atomic_inc_return(&decon->lpd_trig_cnt) > DECON_ENTER_LPD_CNT) &&
 		(atomic_read(&decon->lpd_block_cnt) <= 0) && is_cam_not_running(decon));
+}
+
+static inline bool is_any_pending_frames(struct decon_device *decon)
+{
+	return ((decon->timeline_max - decon->timeline->value) > 1);
 }
 
 /* IOCTL commands */
@@ -647,5 +910,25 @@ static inline bool decon_lpd_enter_cond(struct decon_device *decon)
 
 #define DECON_IOC_LPD_EXIT_LOCK		_IOW('L', 0, u32)
 #define DECON_IOC_LPD_UNLOCK		_IOW('L', 1, u32)
+
+#ifdef CONFIG_LCD_DOZE_MODE
+#define S3CFB_POWER_MODE		_IOW('F', 223, __u32)
+
+enum decon_pwr_mode {
+	DECON_POWER_MODE_OFF,
+	DECON_POWER_MODE_DOZE,
+	DECON_POWER_MODE_NORMAL,
+	DECON_POWER_MODE_DOZE_SUSPEND
+};
+
+enum doze_state {
+	DOZE_STATE_NORMAL,
+	DOZE_STATE_DOZE,
+	DOZE_STATE_SUSPEND,
+	DOZE_STATE_DOZE_SUSPEND
+};
+
+#define IS_DOZE(doze_state)		(doze_state == DOZE_STATE_DOZE || doze_state == DOZE_STATE_DOZE_SUSPEND)
+#endif
 
 #endif /* ___SAMSUNG_DECON_H__ */
