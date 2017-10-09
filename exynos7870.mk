@@ -14,6 +14,11 @@
 # limitations under the License.
 #
 
+# Camera
+PRODUCT_PACKAGES += \
+	camera.universal7420 \
+	libexynoscamera
+
 # Video Codecs
 PRODUCT_PACKAGES += \
 	libOMX.Exynos.VP8.Encoder
