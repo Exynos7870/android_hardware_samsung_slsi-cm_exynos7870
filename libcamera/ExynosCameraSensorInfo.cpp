@@ -667,7 +667,7 @@ ExynosSensorS5K2P2::ExynosSensorS5K2P2()
     focalLengthIn35mmLength = 31;
 
     minFps = 1;
-    maxFps = 30;
+    maxFps = 120;
 
     minExposureCompensation = -4;
     maxExposureCompensation = 4;
