@@ -487,7 +487,7 @@ int gralloc_device_open(const hw_module_t* module, const char* name,
         *device = &dev->device.common;
         status = 0;
     } else {
-        ALOGE("client name %s is not GRALLOC_HARDWARE_GPU0", name);
+        status = fb_device_open(module, name, device);
     }
     return status;
 }
