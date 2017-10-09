@@ -1429,8 +1429,6 @@ bool ExynosCameraParameters::m_isSupportedVideoSize(const int width,
     }
 
     for (int i = 0; i < sizeOfResSize; i++) {
-        if (VIDEO_LIST[i][0] > maxWidth || VIDEO_LIST[i][1] > maxHeight)
-            continue;
         if (VIDEO_LIST[i][0] == width && VIDEO_LIST[i][1] == height) {
             m_cameraInfo.videoSizeRatioId = VIDEO_LIST[i][2];
             return true;
