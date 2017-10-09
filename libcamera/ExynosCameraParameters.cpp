@@ -22,6 +22,9 @@
 #include "ExynosCameraParameters.h"
 
 namespace android {
+	
+/* TODO: Who explane this offset value? */
+#define FW_CUSTOM_OFFSET (1)
 
 ExynosCameraParameters::ExynosCameraParameters(int cameraId)
 {
@@ -202,12 +205,6 @@ status_t ExynosCameraParameters::setParameters(const CameraParameters& params)
     if (checkAutoExposureLock(params) != NO_ERROR)
         ALOGE("ERR(%s[%d]): checkAutoExposureLock fail", __FUNCTION__, __LINE__);
 
-    ret = checkExposureCompensation(params);
-    if (ret != NO_ERROR) {
-        ALOGE("ERR(%s[%d]): checkExposureCompensation fail", __FUNCTION__, __LINE__);
-        return ret;
-    }
-
     if (checkMeteringAreas(params) != NO_ERROR) {
         ALOGE("ERR(%s[%d]): checkMeteringAreas fail", __FUNCTION__, __LINE__);
         return BAD_VALUE;
@@ -283,9 +280,6 @@ status_t ExynosCameraParameters::setParameters(const CameraParameters& params)
 
     if (checkSharpness(params) != NO_ERROR)
         ALOGE("ERR(%s[%d]): checkSharpness fail", __FUNCTION__, __LINE__);
-
-    if (checkHue(params) != NO_ERROR)
-        ALOGE("ERR(%s[%d]): checkHue fail", __FUNCTION__, __LINE__);
 
     if (checkIso(params) != NO_ERROR)
         ALOGE("ERR(%s[%d]): checkIso fail", __FUNCTION__, __LINE__);
@@ -2868,45 +2862,6 @@ void ExynosCameraParameters::m_adjustAeMode(enum aa_aemode curAeMode, enum aa_ae
     }
 }
 
-status_t ExynosCameraParameters::checkExposureCompensation(const CameraParameters& params)
-{
-    int minExposureCompensation = params.getInt(CameraParameters::KEY_MIN_EXPOSURE_COMPENSATION);
-    int maxExposureCompensation = params.getInt(CameraParameters::KEY_MAX_EXPOSURE_COMPENSATION);
-    int newExposureCompensation = params.getInt(CameraParameters::KEY_EXPOSURE_COMPENSATION);
-    int curExposureCompensation = getExposureCompensation();
-
-    ALOGD("DEBUG(%s):newExposureCompensation %d", "setParameters", newExposureCompensation);
-
-    if ((newExposureCompensation < minExposureCompensation) ||
-        (newExposureCompensation > maxExposureCompensation)) {
-        ALOGE("ERR(%s): Invalide Exposurecompensation (Min: %d, Max: %d, Value: %d)", __FUNCTION__,
-            minExposureCompensation, maxExposureCompensation, newExposureCompensation);
-        return BAD_VALUE;
-    }
-
-    if (curExposureCompensation != newExposureCompensation) {
-        m_setExposureCompensation(newExposureCompensation);
-        m_params.set(CameraParameters::KEY_EXPOSURE_COMPENSATION, newExposureCompensation);
-    }
-
-    return NO_ERROR;
-}
-
-/* TODO: Who explane this offset value? */
-#define FW_CUSTOM_OFFSET (1)
-/* F/W's middle value is 5, and step is -4, -3, -2, -1, 0, 1, 2, 3, 4 */
-void ExynosCameraParameters::m_setExposureCompensation(int32_t value)
-{
-    setMetaCtlExposureCompensation(&m_metadata, value + IS_EXPOSURE_DEFAULT + FW_CUSTOM_OFFSET);
-}
-
-int32_t ExynosCameraParameters::getExposureCompensation(void)
-{
-    int32_t expCompensation;
-    getMetaCtlExposureCompensation(&m_metadata, &expCompensation);
-    return expCompensation - IS_EXPOSURE_DEFAULT - FW_CUSTOM_OFFSET;
-}
-
 status_t ExynosCameraParameters::checkMeteringAreas(const CameraParameters& params)
 {
     int ret = NO_ERROR;
@@ -4303,9 +4258,6 @@ void ExynosCameraParameters::setExifChangedAttribute(exif_attribute_t *exifInfo,
     ALOGD("DEBUG(%s):aperture     (%d/%d)", __FUNCTION__, exifInfo->aperture.num, exifInfo->aperture.den);
     ALOGD("DEBUG(%s):brightness   (%d/%d)", __FUNCTION__, exifInfo->brightness.num, exifInfo->brightness.den);
 
-    /* 3 Exposure Bias */
-    exifInfo->exposure_bias.num = (int32_t)getExposureCompensation() * 5;
-    exifInfo->exposure_bias.den = 10;
     /* 3 Metering Mode */
     switch (m_cameraInfo.meteringMode) {
     case METERING_MODE_CENTER:
@@ -4588,7 +4540,7 @@ status_t ExynosCameraParameters::checkBrightness(const CameraParameters& params)
 /* F/W's middle value is 3, and step is -2, -1, 0, 1, 2 */
 void ExynosCameraParameters::m_setBrightness(int brightness)
 {
-    setMetaCtlBrightness(&m_metadata, brightness + IS_BRIGHTNESS_DEFAULT + FW_CUSTOM_OFFSET);
+    setMetaCtlBrightness(&m_metadata, brightness + EV_DEFAULT + FW_CUSTOM_OFFSET);
 }
 
 int ExynosCameraParameters::getBrightness(void)
@@ -4596,7 +4548,7 @@ int ExynosCameraParameters::getBrightness(void)
     int32_t brightness = 0;
 
     getMetaCtlBrightness(&m_metadata, &brightness);
-    return brightness - IS_BRIGHTNESS_DEFAULT - FW_CUSTOM_OFFSET;
+    return brightness - EV_DEFAULT - FW_CUSTOM_OFFSET;
 }
 
 status_t ExynosCameraParameters::checkSaturation(const CameraParameters& params)
@@ -4625,7 +4577,7 @@ status_t ExynosCameraParameters::checkSaturation(const CameraParameters& params)
 
 void ExynosCameraParameters::m_setSaturation(int saturation)
 {
-    setMetaCtlSaturation(&m_metadata, saturation + IS_SATURATION_DEFAULT + FW_CUSTOM_OFFSET);
+    setMetaCtlSaturation(&m_metadata, saturation + SATURATION_DEFAULT + FW_CUSTOM_OFFSET);
 }
 
 int ExynosCameraParameters::getSaturation(void)
@@ -4633,7 +4585,7 @@ int ExynosCameraParameters::getSaturation(void)
     int32_t saturation = 0;
 
     getMetaCtlSaturation(&m_metadata, &saturation);
-    return saturation - IS_SATURATION_DEFAULT - FW_CUSTOM_OFFSET;
+    return saturation - SATURATION_DEFAULT - FW_CUSTOM_OFFSET;
 }
 
 status_t ExynosCameraParameters::checkSharpness(const CameraParameters& params)
@@ -4662,7 +4614,7 @@ status_t ExynosCameraParameters::checkSharpness(const CameraParameters& params)
 
 void ExynosCameraParameters::m_setSharpness(int sharpness)
 {
-    int newSharpness = sharpness + IS_SHARPNESS_DEFAULT;
+    int newSharpness = sharpness + SHARPNESS_DEFAULT;
     enum processing_mode mode = PROCESSING_MODE_OFF;
 
     if (newSharpness == 0)
@@ -4681,44 +4633,7 @@ int ExynosCameraParameters::getSharpness(void)
     enum processing_mode mode = PROCESSING_MODE_OFF;
 
     getMetaCtlSharpness(&m_metadata, &mode, &sharpness);
-    return sharpness - IS_SHARPNESS_DEFAULT - FW_CUSTOM_OFFSET;
-}
-
-status_t ExynosCameraParameters::checkHue(const CameraParameters& params)
-{
-    int maxHue = params.getInt("hue-max");
-    int minHue = params.getInt("hue-min");
-    int newHue = params.getInt("hue");
-    int curHue = -1;
-
-    ALOGD("DEBUG(%s):newHue %d", "setParameters", newHue);
-
-    if (newHue < minHue || newHue > maxHue) {
-        ALOGE("ERR(%s): Invalid Hue (Min: %d, Max: %d, Value: %d)", __FUNCTION__, minHue, maxHue, newHue);
-        return BAD_VALUE;
-    }
-
-    curHue = getHue();
-
-    if (curHue != newHue) {
-        m_setHue(newHue);
-        m_params.set("hue", newHue);
-    }
-
-    return NO_ERROR;
-}
-
-void ExynosCameraParameters::m_setHue(int hue)
-{
-    setMetaCtlHue(&m_metadata, hue + IS_HUE_DEFAULT + FW_CUSTOM_OFFSET);
-}
-
-int ExynosCameraParameters::getHue(void)
-{
-    int32_t hue = 0;
-
-    getMetaCtlHue(&m_metadata, &hue);
-    return hue - IS_HUE_DEFAULT - FW_CUSTOM_OFFSET;
+    return sharpness - SHARPNESS_DEFAULT - FW_CUSTOM_OFFSET;
 }
 
 status_t ExynosCameraParameters::checkIso(const CameraParameters& params)
@@ -4788,17 +4703,17 @@ status_t ExynosCameraParameters::checkContrast(const CameraParameters& params)
     ALOGD("DEBUG(%s):strNewContrast %s", "setParameters", strNewContrast);
 
     if (!strcmp(strNewContrast, "auto"))
-        newContrast = IS_CONTRAST_DEFAULT;
+        newContrast = CONTRAST_DEFAULT;
     else if (!strcmp(strNewContrast, "-2"))
-        newContrast = IS_CONTRAST_MINUS_2;
+        newContrast = CONTRAST_MINUS_2;
     else if (!strcmp(strNewContrast, "-1"))
-        newContrast = IS_CONTRAST_MINUS_1;
+        newContrast = CONTRAST_MINUS_1;
     else if (!strcmp(strNewContrast, "0"))
-        newContrast = IS_CONTRAST_DEFAULT;
+        newContrast = CONTRAST_DEFAULT;
     else if (!strcmp(strNewContrast, "1"))
-        newContrast = IS_CONTRAST_PLUS_1;
+        newContrast = CONTRAST_PLUS_1;
     else if (!strcmp(strNewContrast, "2"))
-        newContrast = IS_CONTRAST_PLUS_2;
+        newContrast = CONTRAST_PLUS_2;
     else {
         ALOGE("ERR(%s):Invalid contrast value(%s)", __FUNCTION__, strNewContrast);
         return BAD_VALUE;
@@ -6887,7 +6802,7 @@ bool ExynosCameraParameters::doCscRecording(void)
     ALOGV("DEBUG(%s[%d]):hwPreviewSize = %d x %d",  __FUNCTION__, __LINE__, hwPreviewW, hwPreviewH);
     ALOGV("DEBUG(%s[%d]):videoSize     = %d x %d",  __FUNCTION__, __LINE__, videoW, videoH);
 
-    if (videoW >= 1920 && videoH >= 1080)
+    if (videoW >= 1920 && videoH >= 1080
         && m_useAdaptiveCSCRecording == true
         && videoW == hwPreviewW
         && videoH == hwPreviewH) {

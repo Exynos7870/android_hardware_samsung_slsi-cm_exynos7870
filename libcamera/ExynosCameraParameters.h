@@ -132,7 +132,6 @@ public:
     status_t        checkZoomLevel(const CameraParameters& params);
     status_t        checkRotation(const CameraParameters& params);
     status_t        checkAutoExposureLock(const CameraParameters& params);
-    status_t        checkExposureCompensation(const CameraParameters& params);
     status_t        checkMeteringAreas(const CameraParameters& params);
     status_t        checkMeteringMode(const CameraParameters& params);
     status_t        checkAntibanding(const CameraParameters& params);
@@ -215,8 +214,6 @@ private:
     void            m_setAntibanding(int value);
     /* Sets the current color effect setting. */
     void            m_setColorEffectMode(enum colorcorrection_mode effect);
-    /* Sets the exposure compensation index. */
-    void            m_setExposureCompensation(int value);
     /* Sets the flash mode. */
     void            m_setFlashMode(int flashMode);
     /* Sets focus areas. */
@@ -277,8 +274,6 @@ private:
     void            m_setSaturation(int saturation);
     /* Sets Sharpness */
     void            m_setSharpness(int sharpness);
-    /* Sets Hue */
-    void            m_setHue(int hue);
     /* Sets WDR */
     void            m_setHdrMode(bool hdr);
     /* Sets WDR */
@@ -392,8 +387,6 @@ public:
     bool            getAutoWhiteBalanceLock(void);
     /* Gets the current color effect setting. */
     enum colorcorrection_mode getColorEffectMode(void);
-    /* Gets the current exposure compensation index. */
-    int             getExposureCompensation(void);
     /* Gets the current flash mode setting. */
     int             getFlashMode(void);
     /* Gets the current focus areas. */
@@ -453,8 +446,6 @@ public:
     int             getSaturation(void);
     /* Gets Sharpness */
     int             getSharpness(void);
-    /* Gets Hue */
-    int             getHue(void);
     /* Gets WDR */
     bool            getHdrMode(void);
     /* Gets WDR */
