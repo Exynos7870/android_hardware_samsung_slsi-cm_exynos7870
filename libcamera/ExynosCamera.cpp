@@ -732,10 +732,6 @@ status_t ExynosCamera::startPreview()
             if (ret < 0)
                 ALOGE("ERR(%s[%d]):FLITE setControl fail, ret(%d)", __FUNCTION__, __LINE__, ret);
 
-            ret = m_previewFrameFactory->setControl(V4L2_CID_IS_SCENE_MODE, initMetaData->shot.ctl.aa.sceneMode, PIPE_FLITE);
-            if (ret < 0)
-                ALOGE("ERR(%s[%d]):FLITE setControl fail, ret(%d)", __FUNCTION__, __LINE__, ret);
-
             delete initMetaData;
             initMetaData = NULL;
         } else {
