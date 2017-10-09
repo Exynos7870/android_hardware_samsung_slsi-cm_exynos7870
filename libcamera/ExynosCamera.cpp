@@ -3146,7 +3146,6 @@ status_t ExynosCamera::m_setCallbackBufferInfo(ExynosCameraBuffer *callbackBuf, 
         callbackBuf->addr[2] = callbackBuf->addr[1] + callbackBuf->size[1];
     }
 
-    ALOGV("DEBUG(%s): preview size(%dx%d)", __FUNCTION__, hwPreviewW, hwPreviewH);
     ALOGV("DEBUG(%s): dst_size(%dx%d), dst_crop_size(%dx%d)", __FUNCTION__, dst_width, dst_height, dst_crop_width, dst_crop_height);
 
     return NO_ERROR;
@@ -6200,7 +6199,6 @@ status_t ExynosCamera::m_checkThreadInterval(uint32_t pipeId, uint32_t pipeInter
         ret = false;
     } else {
         ALOGV("Thread IntervalTime [%lld]", *threadInterval);
-        ALOGV("Thread Renew Count [%d]", *countRenew);
         ret = NO_ERROR;
     }
 
