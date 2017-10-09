@@ -1138,9 +1138,9 @@ status_t ExynosCameraParameters::m_adjustPreviewFpsRange(int &newMinFps, int &ne
     if (getDualMode() == true) {
         flagSpecialMode = true;
 
-        /* when dual mode, fps is limited by 24fps */
-        if (24000 < newMaxFps)
-            newMaxFps = 24000;
+        /* when dual mode, fps is limited by 48fps */
+        if (48000 < newMaxFps)
+            newMaxFps = 48000;
 
         /* set fixed fps. */
         newMinFps = newMaxFps;
@@ -1150,9 +1150,9 @@ status_t ExynosCameraParameters::m_adjustPreviewFpsRange(int &newMinFps, int &ne
     if (getDualRecordingHint() == true) {
         flagSpecialMode = true;
 
-        /* when dual recording mode, fps is limited by 24fps */
-        if (24000 < newMaxFps)
-            newMaxFps = 24000;
+        /* when dual recording mode, fps is limited by 48fps */
+        if (48000 < newMaxFps)
+            newMaxFps = 48000;
 
         /* set fixed fps. */
         newMinFps = newMaxFps;
@@ -1162,9 +1162,9 @@ status_t ExynosCameraParameters::m_adjustPreviewFpsRange(int &newMinFps, int &ne
     if (getEffectHint() == true) {
         flagSpecialMode = true;
 
-        /* when effect mode, fps is limited by 24fps */
-        if (24000 < newMaxFps)
-            newMaxFps = 24000;
+        /* when effect mode, fps is limited by 48fps */
+        if (48000 < newMaxFps)
+            newMaxFps = 48000;
 
         /* set fixed fps. */
         newMinFps = newMaxFps;
@@ -1196,7 +1196,7 @@ status_t ExynosCameraParameters::m_adjustPreviewFpsRange(int &newMinFps, int &ne
             newMinFps = newMaxFps;
         } else {
             newMinFps = 30000;
-            newMaxFps = 30000;
+            newMaxFps = 60000;
         }
         break;
     case SCENE_MODE_PORTRAIT:
@@ -1204,8 +1204,8 @@ status_t ExynosCameraParameters::m_adjustPreviewFpsRange(int &newMinFps, int &ne
         if (getHighSpeedRecording() == true){
             newMinFps = newMaxFps / 2;
         } else {
-            newMinFps = 15000;
-            newMaxFps = 30000;
+            newMinFps = 30000;
+            newMaxFps = 60000;
         }
         break;
     case SCENE_MODE_NIGHT:
@@ -1216,8 +1216,8 @@ status_t ExynosCameraParameters::m_adjustPreviewFpsRange(int &newMinFps, int &ne
         if (getHighSpeedRecording() == true){
             newMinFps = newMaxFps / 4;
         } else {
-            newMinFps = 8000;
-            newMaxFps = 30000;
+            newMinFps = 30000;
+            newMaxFps = 60000;
         }
         break;
     case SCENE_MODE_NIGHT_PORTRAIT:
@@ -1233,8 +1233,8 @@ status_t ExynosCameraParameters::m_adjustPreviewFpsRange(int &newMinFps, int &ne
         if (getHighSpeedRecording() == true){
             newMinFps = newMaxFps / 2;
         } else {
-            newMinFps = 15000;
-            newMaxFps = 30000;
+            newMinFps = 30000;
+            newMaxFps = 60000;
         }
         break;
     default:
@@ -1252,22 +1252,22 @@ status_t ExynosCameraParameters::m_adjustPreviewFpsRange(int &newMinFps, int &ne
     case SHOT_MODE_RICH_TONE:
     case SHOT_MODE_STORY:
     case SHOT_MODE_SPORTS:
-        newMinFps = 15000;
-        newMaxFps = 30000;
+        newMinFps = 30000;
+        newMaxFps = 60000;
         break;
     case SHOT_MODE_DRAMA:
         newMinFps = 30000;
-        newMaxFps = 30000;
+        newMaxFps = 60000;
         break;
     case SHOT_MODE_PANORAMA:
     case SHOT_MODE_ANIMATED_SCENE:
-        newMinFps = 15000;
-        newMaxFps = 15000;
+        newMinFps = 30000;
+        newMaxFps = 60000;
         break;
     case SHOT_MODE_NIGHT:
     case SHOT_MODE_NIGHT_SCENE:
-        newMinFps = 10000;
-        newMaxFps = 30000;
+        newMinFps = 30000;
+        newMaxFps = 60000;
         break;
     default:
         break;
