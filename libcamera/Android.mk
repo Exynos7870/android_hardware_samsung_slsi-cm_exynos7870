@@ -25,6 +25,7 @@ LOCAL_SHARED_LIBRARIES:= libutils libcutils libbinder liblog libcamera_client li
 LOCAL_SHARED_LIBRARIES += libexynosutils libhwjpeg libexynosv4l2 libexynosgscaler libion_exynos libcsc
 LOCAL_SHARED_LIBRARIES += libexpat
 LOCAL_SHARED_LIBRARIES += libpower
+LOCAL_SHARED_LIBRARIES += libui libhidlbase android.hidl.base@1.0 android.hardware.graphics.bufferqueue@1.0
 
 LOCAL_CFLAGS += -DGAIA_FW_BETA
 LOCAL_CFLAGS += -DMAIN_CAMERA_SENSOR_NAME=$(BOARD_BACK_CAMERA_SENSOR)
@@ -57,7 +58,12 @@ LOCAL_C_INCLUDES += \
 	$(TOP)/vendor/samsung/feature/CscFeature/libsecnativefeature \
 	$(TOP)/bionic \
 	$(TOP)/external/expat/lib \
-	$(TOP)/external/stlport/stlport
+	system/libhidl/transport/token/1.0/utils/include \
+	system/libhidl/base/include \
+	$(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include
+
+LOCAL_ADDITIONAL_DEPENDENCIES += \
+	$(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
 
 LOCAL_SRC_FILES:= \
 	ExynosCameraSensorInfo.cpp \
@@ -122,7 +128,13 @@ LOCAL_C_INCLUDES += \
 	$(TOP)/hardware/samsung_slsi-cm/$(TARGET_BOARD_PLATFORM)/include \
 	$(TOP)/hardware/samsung_slsi-cm/$(TARGET_BOARD_PLATFORM)/libcamera \
 	frameworks/native/include \
-	system/media/camera/include
+	system/media/camera/include \
+	system/libhidl/transport/token/1.0/utils/include \
+	system/libhidl/base/include \
+	$(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include
+
+LOCAL_ADDITIONAL_DEPENDENCIES += \
+	$(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
 
 LOCAL_SRC_FILES:= \
 	../../exynos/libcamera/common/ExynosCameraInterface.cpp
@@ -133,6 +145,7 @@ LOCAL_CFLAGS += -DFRONT_ROTATION=$(BOARD_FRONT_CAMERA_ROTATION)
 
 LOCAL_SHARED_LIBRARIES:= libutils libcutils libbinder liblog libcamera_client libhardware
 LOCAL_SHARED_LIBRARIES += libexynosutils libhwjpeg libexynosv4l2 libcsc libion_exynos libexynoscamera
+LOCAL_SHARED_LIBRARIES += libui libhidlbase android.hidl.base@1.0 android.hardware.graphics.bufferqueue@1.0
 
 LOCAL_MODULE := camera.$(TARGET_BOOTLOADER_BOARD_NAME)
 
