@@ -39,8 +39,8 @@ LOCAL_CFLAGS += -DFRONT_ROTATION=$(BOARD_FRONT_CAMERA_ROTATION)
 LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/../include \
 	$(LOCAL_PATH)/../libcamera \
-	$(TOP)/hardware/samsung_slsi-cm/exynos/libcamera/54xx \
-	$(TOP)/hardware/samsung_slsi-cm/exynos/libcamera/54xx/JpegEncoderForCamera \
+	$(TOP)/hardware/samsung_slsi-cm/$(TARGET_SOC)/libcamera \
+	$(TOP)/hardware/samsung_slsi-cm/$(TARGET_SOC)/libcamera/JpegEncoderForCamera \
 	$(TOP)/hardware/samsung_slsi-cm/exynos/libcamera/common \
 	$(TOP)/hardware/samsung_slsi-cm/exynos/libcamera/common/Pipes \
 	$(TOP)/hardware/samsung_slsi-cm/exynos/libcamera/common/Activities \
@@ -80,15 +80,15 @@ LOCAL_SRC_FILES:= \
 	../../exynos/libcamera/common/Activities/ExynosCameraActivityFlash.cpp \
 	../../exynos/libcamera/common/Activities/ExynosCameraActivitySpecialCapture.cpp \
 	../../exynos/libcamera/common/Activities/ExynosCameraActivityUCTL.cpp \
-	../../exynos/libcamera/54xx/JpegEncoderForCamera/ExynosJpegEncoderForCamera.cpp \
-	../../exynos/libcamera/54xx/ExynosCamera.cpp \
-	../../exynos/libcamera/54xx/ExynosCameraParameters.cpp \
-	../../exynos/libcamera/54xx/ExynosCameraFrameFactory.cpp \
-	../../exynos/libcamera/54xx/ExynosCameraFrameReprocessingFactory.cpp \
-	../../exynos/libcamera/54xx/ExynosCameraFrameFactoryFront.cpp \
-	../../exynos/libcamera/54xx/ExynosCameraActivityControl.cpp\
-	../../exynos/libcamera/54xx/ExynosCameraUtilsModule.cpp \
-	../../exynos/libcamera/54xx/ExynosCameraScalableSensor.cpp
+	../../$(TARGET_SOC)/libcamera/JpegEncoderForCamera/ExynosJpegEncoderForCamera.cpp \
+	../../$(TARGET_SOC)/libcamera/ExynosCamera.cpp \
+	../../$(TARGET_SOC)/libcamera/ExynosCameraParameters.cpp \
+	../../$(TARGET_SOC)/libcamera/ExynosCameraFrameFactory.cpp \
+	../../$(TARGET_SOC)/libcamera/ExynosCameraFrameReprocessingFactory.cpp \
+	../../$(TARGET_SOC)/libcamera/ExynosCameraFrameFactoryFront.cpp \
+	../../$(TARGET_SOC)/libcamera/ExynosCameraActivityControl.cpp\
+	../../$(TARGET_SOC)/libcamera/ExynosCameraUtilsModule.cpp \
+	../../$(TARGET_SOC)/libcamera/ExynosCameraScalableSensor.cpp
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libexynoscamera
@@ -108,8 +108,8 @@ LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/../include \
 	$(LOCAL_PATH)/../libcamera \
 	$(LOCAL_PATH)/../libcamera/Vendor \
-	$(TOP)/hardware/samsung_slsi-cm/exynos/libcamera/54xx \
-	$(TOP)/hardware/samsung_slsi-cm/exynos/libcamera/54xx/JpegEncoderForCamera \
+	$(TOP)/hardware/samsung_slsi-cm/$(TARGET_SOC)/libcamera \
+	$(TOP)/hardware/samsung_slsi-cm/$(TARGET_SOC)/libcamera/JpegEncoderForCamera \
 	$(TOP)/hardware/samsung_slsi-cm/exynos/libcamera/common \
 	$(TOP)/hardware/samsung_slsi-cm/exynos/libcamera/common/Pipes \
 	$(TOP)/hardware/samsung_slsi-cm/exynos/libcamera/common/Activities \
