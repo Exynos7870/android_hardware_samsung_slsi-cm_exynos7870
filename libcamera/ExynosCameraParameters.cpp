@@ -1900,7 +1900,7 @@ bool ExynosCameraParameters::m_isHighResolutionCallbackSize(const int width, con
 {
     bool highResolutionCallbackMode;
 
-    if (width == m_staticInfo->highResolutionCallbackW && height == m_staticInfo->highResolutionCallbackH)
+    if (width >= m_staticInfo->highResolutionCallbackW && height >= m_staticInfo->highResolutionCallbackH)
         highResolutionCallbackMode = true;
     else
         highResolutionCallbackMode = false;
@@ -6889,7 +6889,7 @@ bool ExynosCameraParameters::doCscRecording(void)
     ALOGV("DEBUG(%s[%d]):hwPreviewSize = %d x %d",  __FUNCTION__, __LINE__, hwPreviewW, hwPreviewH);
     ALOGV("DEBUG(%s[%d]):videoSize     = %d x %d",  __FUNCTION__, __LINE__, videoW, videoH);
 
-    if (((videoW == 3840 && videoH == 2160) || (videoW == 1920 && videoH == 1080))
+    if (videoW >= 1920 && videoH >= 1080)
         && m_useAdaptiveCSCRecording == true
         && videoW == hwPreviewW
         && videoH == hwPreviewH) {
