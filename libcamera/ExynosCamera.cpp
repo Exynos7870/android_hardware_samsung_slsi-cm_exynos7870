@@ -25,8 +25,6 @@ namespace android {
 
 ExynosCamera::ExynosCamera(int cameraId, camera_device_t *dev)
 {
-    BUILD_DATE();
-
     checkAndroidVersion();
 
     m_cameraId = cameraId;
