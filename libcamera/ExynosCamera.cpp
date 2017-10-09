@@ -665,7 +665,7 @@ status_t ExynosCamera::startPreview()
         }
 
         ALOGI("INFO(%s[%d]):setBuffersThread is run", __FUNCTION__, __LINE__);
-        m_setBuffersThread->run(PRIORITY_DEFAULT);
+        m_setBuffersThread->run("ExynosCamera_setBuffersThread", PRIORITY_DEFAULT);
 
         if (m_captureSelector == NULL) {
             ExynosCameraBufferManager *bufMgr = NULL;
@@ -756,7 +756,7 @@ status_t ExynosCamera::startPreview()
 
         if (isReprocessing() == true) {
 #ifdef START_PICTURE_THREAD
-            m_startPictureInternalThread->run(PRIORITY_DEFAULT);
+            m_startPictureInternalThread->run("ExynosCamera_startPictureInternalThread", PRIORITY_DEFAULT);
 #endif
         } else {
             m_pictureFrameFactory = m_previewFrameFactory;
@@ -766,8 +766,8 @@ status_t ExynosCamera::startPreview()
         if (m_previewWindow != NULL)
             m_previewWindow->set_timestamp(m_previewWindow, systemTime(SYSTEM_TIME_MONOTONIC));
 
-        m_mainThread->run(PRIORITY_DEFAULT);
-        m_monitorThread->run(PRIORITY_DEFAULT);
+        m_mainThread->run("ExynosCamera_mainThread", PRIORITY_DEFAULT);
+        m_monitorThread->run("ExynosCamera_monitorThread", PRIORITY_DEFAULT);
 
         if ((m_exynosCameraParameters->getHighResolutionCallbackMode() == true) &&
             (m_highResolutionCallbackRunning == false)) {
@@ -775,10 +775,10 @@ status_t ExynosCamera::startPreview()
             if (skipFrameCount > 0)
                 m_skipReprocessing = true;
             m_highResolutionCallbackRunning = true;
-            m_startPictureInternalThread->run(PRIORITY_DEFAULT);
+            m_startPictureInternalThread->run("ExynosCamera_startPictureInternalThread", PRIORITY_DEFAULT);
 
             m_startPictureInternalThread->join();
-            m_prePictureThread->run(PRIORITY_DEFAULT);
+            m_prePictureThread->run("ExynosCamera_prePictureThread", PRIORITY_DEFAULT);
         }
 
         /* FD-AE is always on */
@@ -1127,7 +1127,7 @@ status_t ExynosCamera::autoFocus()
     }
 #endif
 
-    m_autoFocusThread->run(PRIORITY_DEFAULT);
+    m_autoFocusThread->run("ExynosCamera_autoFocusThread", PRIORITY_DEFAULT);
 
     return NO_ERROR;
 }
@@ -1296,13 +1296,13 @@ status_t ExynosCamera::takePicture()
 
                 /* execute autoFocus for preFlash */
                 m_autoFocusThread->requestExitAndWait();
-                m_autoFocusThread->run(PRIORITY_DEFAULT);
+                m_autoFocusThread->run("ExynosCamera_autoFocusThread", PRIORITY_DEFAULT);
             }
         }
 
         m_reprocessingCounter.setCount(seriesShotCount);
         if (m_prePictureThread->isRunning() == false) {
-            if (m_prePictureThread->run(PRIORITY_DEFAULT) != NO_ERROR) {
+            if (m_prePictureThread->run("ExynosCamera_prePictureThread", PRIORITY_DEFAULT) != NO_ERROR) {
                 ALOGE("ERR(%s[%d]):couldn't run pre-picture thread", __FUNCTION__, __LINE__);
                 return INVALID_OPERATION;
             }
@@ -1311,7 +1311,7 @@ status_t ExynosCamera::takePicture()
         m_jpegCounter.setCount(seriesShotCount);
         m_pictureCounter.setCount(seriesShotCount);
         if (m_pictureThread->isRunning() == false)
-            ret = m_pictureThread->run();
+            ret = m_pictureThread->run("ExynosCamera_pictureThread");
         if (ret < 0) {
             ALOGE("ERR(%s[%d]):couldn't run picture thread, ret(%d)", __FUNCTION__, __LINE__, ret);
             return INVALID_OPERATION;
@@ -1322,7 +1322,7 @@ status_t ExynosCamera::takePicture()
                 currentSeriesShotMode == SERIES_SHOT_MODE_LLS ||
                 currentSeriesShotMode == SERIES_SHOT_MODE_SIS)) {
             m_jpegCallbackThread->join();
-            ret = m_jpegCallbackThread->run();
+            ret = m_jpegCallbackThread->run("ExynosCamera_jpegCallbackThread");
             if (ret < 0) {
                 ALOGE("ERR(%s[%d]):couldn't run jpeg callback thread, ret(%d)", __FUNCTION__, __LINE__, ret);
                 return INVALID_OPERATION;
@@ -1335,7 +1335,7 @@ status_t ExynosCamera::takePicture()
                 currentSeriesShotMode == SERIES_SHOT_MODE_SIS)) {
             /* series shot : push buffer to callback thread. */
             m_jpegCallbackThread->join();
-            ret = m_jpegCallbackThread->run();
+            ret = m_jpegCallbackThread->run("ExynosCamera_jpegCallbackThread");
             if (ret < 0) {
                 ALOGE("ERR(%s[%d]):couldn't run jpeg callback thread, ret(%d)", __FUNCTION__, __LINE__, ret);
                 return INVALID_OPERATION;
@@ -2539,7 +2539,7 @@ status_t ExynosCamera::m_restartPreviewInternal(void)
     }
 
     ALOGI("INFO(%s[%d]):setBuffersThread is run", __FUNCTION__, __LINE__);
-    m_setBuffersThread->run(PRIORITY_DEFAULT);
+    m_setBuffersThread->run("ExynosCamera_setBuffersThread", PRIORITY_DEFAULT);
     m_setBuffersThread->join();
 
     ret = m_startPreviewInternal();
@@ -2548,7 +2548,7 @@ status_t ExynosCamera::m_restartPreviewInternal(void)
         err = ret;
     }
 
-    m_mainThread->run(PRIORITY_DEFAULT);
+    m_mainThread->run("ExynosCamera_mainThread", PRIORITY_DEFAULT);
 
     return err;
 }
