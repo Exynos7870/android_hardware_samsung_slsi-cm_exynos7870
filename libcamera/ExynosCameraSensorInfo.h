@@ -392,8 +392,8 @@ static int VIDEO_LIST[][SIZE_OF_RESOLUTION] =
  * So, the useless electric current is wasted.
  * Conclusion: The 1st of the list set the LCD size until GED camera App is modified.
  */
-    { 1920, 1080, SIZE_RATIO_16_9},
     { 3840, 2160, SIZE_RATIO_16_9},
+    { 1920, 1080, SIZE_RATIO_16_9},
     { 1440, 1080, SIZE_RATIO_4_3},
     { 1280,  720, SIZE_RATIO_16_9},
     {  960,  720, SIZE_RATIO_4_3},
@@ -408,18 +408,17 @@ static int VIDEO_LIST[][SIZE_OF_RESOLUTION] =
 
 static int FPS_RANGE_LIST[][2] =
 {
-    {   5000,   5000},
-    {   7000,   7000},
-    {  15000,  15000},
-    {  24000,  24000},
-    {  27000,  27000},
-    {   4000,  30000},
-    {  10000,  30000},
-    {  15000,  30000},
     {  30000,  30000},
     {  30000,  60000},
-    {  60000,  60000},
+    {  30000,  60000},
     {  60000, 120000},
+    {  60000, 120000},
+    { 120000, 120000},
+    { 120000, 120000},
+    { 120000, 120000},
+    { 120000, 120000},
+    { 120000, 120000},
+    { 120000, 120000},
     { 120000, 120000},
 };
 
