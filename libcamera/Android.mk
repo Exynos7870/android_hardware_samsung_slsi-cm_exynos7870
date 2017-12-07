@@ -25,7 +25,7 @@ LOCAL_SHARED_LIBRARIES:= libutils libcutils libbinder liblog libcamera_client li
 LOCAL_SHARED_LIBRARIES += libexynosutils libhwjpeg libexynosv4l2 libexynosgscaler libion_exynos libcsc
 LOCAL_SHARED_LIBRARIES += libexpat
 LOCAL_SHARED_LIBRARIES += libpower
-LOCAL_SHARED_LIBRARIES += libui libhidlbase android.hidl.base@1.0 android.hardware.graphics.bufferqueue@1.0
+LOCAL_SHARED_LIBRARIES += libui libhidlbase android.hardware.graphics.bufferqueue@1.0
 
 LOCAL_CFLAGS += -DGAIA_FW_BETA
 LOCAL_CFLAGS += -DMAIN_CAMERA_SENSOR_NAME=$(BOARD_BACK_CAMERA_SENSOR)
@@ -60,7 +60,10 @@ LOCAL_C_INCLUDES += \
 	$(TOP)/external/expat/lib \
 	system/libhidl/transport/token/1.0/utils/include \
 	system/libhidl/base/include \
-	$(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include
+	$(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include \
+	$(TOP)/frameworks/native/libs/arect/include \
+	$(TOP)/frameworks/native/libs/nativebase/include \
+	$(TOP)/frameworks/native/libs/nativewindow/include
 
 LOCAL_ADDITIONAL_DEPENDENCIES += \
 	$(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
@@ -145,7 +148,7 @@ LOCAL_CFLAGS += -DFRONT_ROTATION=$(BOARD_FRONT_CAMERA_ROTATION)
 
 LOCAL_SHARED_LIBRARIES:= libutils libcutils libbinder liblog libcamera_client libhardware
 LOCAL_SHARED_LIBRARIES += libexynosutils libhwjpeg libexynosv4l2 libcsc libion_exynos libexynoscamera
-LOCAL_SHARED_LIBRARIES += libui libhidlbase android.hidl.base@1.0 android.hardware.graphics.bufferqueue@1.0
+LOCAL_SHARED_LIBRARIES += libui libhidlbase android.hardware.graphics.bufferqueue@1.0
 
 LOCAL_MODULE := camera.$(TARGET_BOOTLOADER_BOARD_NAME)
 
