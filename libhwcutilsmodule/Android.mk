@@ -40,7 +40,7 @@ LOCAL_ADDITIONAL_DEPENDENCIES += \
 
 LOCAL_SRC_FILES := \
 	ExynosMPPModule.cpp
-
+LOCAL_VENDOR_MODULE := true
 LOCAL_MODULE_TAGS := eng
 LOCAL_MODULE := libhwcutilsmodule
 include $(BUILD_SHARED_LIBRARY)

@@ -45,7 +45,7 @@ endif
 
 LOCAL_SRC_FILES := \
 	ExynosExternalDisplayModule.cpp
-
+LOCAL_VENDOR_MODULE := true
 LOCAL_MODULE_TAGS := eng
 LOCAL_MODULE := libhdmimodule
 include $(BUILD_SHARED_LIBRARY)

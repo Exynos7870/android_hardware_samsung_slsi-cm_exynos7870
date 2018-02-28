@@ -13,6 +13,7 @@ LOCAL_MODULE := libMcClient
 LOCAL_MODULE_TAGS := debug eng optional
 LOCAL_C_INCLUDES += $(GLOBAL_INCLUDES)
 LOCAL_SHARED_LIBRARIES += $(GLOBAL_LIBRARIES) liblog
+LOCAL_VENDOR_MODULE := true
 
 LOCAL_CFLAGS := -fvisibility=hidden -fvisibility-inlines-hidden
 LOCAL_CFLAGS += -include buildTag.h
@@ -56,6 +57,7 @@ LOCAL_CFLAGS += -DLOG_TAG=\"McDaemon\"
 LOCAL_CFLAGS += -DTBASE_API_LEVEL=3
 LOCAL_C_INCLUDES += $(GLOBAL_INCLUDES)
 LOCAL_SHARED_LIBRARIES += $(GLOBAL_LIBRARIES) libMcClient liblog
+LOCAL_VENDOR_MODULE := true
 
 include $(LOCAL_PATH)/Daemon/Android.mk
 
@@ -94,6 +96,7 @@ LOCAL_MODULE_TAGS := debug eng optional
 LOCAL_CFLAGS += -DLOG_TAG=\"McRegistry\"
 LOCAL_C_INCLUDES += $(GLOBAL_INCLUDES)
 LOCAL_SHARED_LIBRARIES += $(GLOBAL_LIBRARIES) liblog
+LOCAL_VENDOR_MODULE := true
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/Common \
 	$(LOCAL_PATH)/Daemon/public \
