@@ -35,7 +35,7 @@ MC_DEBUG := _DEBUG
 SYSTEM_LIB_DIR=/system/lib
 GDM_PROVLIB_SHARED_LIBS=libMcClient
 # Include the provisioning lib
-include $(MOBICORE_PROJECT_PATH)/provlib/Android.mk
+#include $(MOBICORE_PROJECT_PATH)/provlib/Android.mk
 
 LOCAL_ADDITIONAL_DEPENDENCIES += \
 	$(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
